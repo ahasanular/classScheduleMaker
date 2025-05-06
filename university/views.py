@@ -171,3 +171,30 @@ def generate_routine_pdf(request):
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'filename="cse_evening_routine.pdf"'
     return response
+
+
+from django.views import View
+from django.http import HttpResponseRedirect
+from django.core.management import call_command
+from io import StringIO
+
+
+class GenerateNewRoutineSet(View):
+    """
+    Django class-based view that runs a management command and redirects back to the referring URL.
+    """
+
+    def get(self, request, *args, **kwargs):
+        command_name = 'generate'  # Replace with your management command name
+
+        out = StringIO()
+        err = StringIO()
+        try:
+            call_command(command_name, stdout=out, stderr=err)
+        except Exception:
+            # Even if error, we will redirect back as per user request
+            pass
+
+        # Get 'Referer' HTTP header to redirect back
+        referer_url = request.META.get('HTTP_REFERER', '/')
+        return HttpResponseRedirect(referer_url)

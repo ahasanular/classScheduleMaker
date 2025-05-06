@@ -32,6 +32,7 @@
 <body>
     <h2 style="text-align:center;">Department of Computer Science & Engineering</h2>
     <h4 style="text-align:center;">Semester-wise Class Routine</h4>
+    <a href="{% url 'generate_routine_view'%}" class="btn btn-primary"><button>Generate New</button></a>
     <a target="_blank" href="{% url 'export_routine_pdf'%}" class="btn btn-primary"><button>Export PDF</button></a>
 
     {% for day in days %}
