@@ -1,0 +1,113 @@
+{% load custom_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: sans-serif;
+            font-size: 12px;
+            margin: 0;
+            padding: 0;
+        }
+        .page-break {
+            page-break-after: always;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 4px;
+            text-align: center;
+            vertical-align: middle;
+            word-wrap: break-word;
+        }
+        th {
+            background: #f0f0f0;
+        }
+        @page {
+        size: A4 landscape;
+        margin: 1cm;
+    }
+
+    body {
+        font-family: sans-serif;
+        font-size: 12px;
+        margin: 0;
+        padding: 0;
+    }
+
+    .page-break {
+        page-break-after: always;
+        margin-bottom: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    th, td {
+        border: 1px solid #000;
+        padding: 4px;
+        text-align: center;
+        vertical-align: middle;
+        word-wrap: break-word;
+    }
+
+    th {
+        background: #f0f0f0;
+    }
+    </style>
+</head>
+<body>
+
+{% for day, assignments in days_data %}
+    <div class="page-break">
+        <h3 style="text-align: center;">{{ day|title }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Semester</th>
+                    {% for slot in all_slots %}
+                        {% if slot.day == day %}
+                            <th>
+                                {{ slot.start_time|time:"g:i a" }}<br>to<br>{{ slot.end_time|time:"g:i a" }}
+                            </th>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for sem in semesters %}
+                    <tr>
+                        <td>{{ sem }}</td>
+                        {% for slot in all_slots %}
+                            {% if slot.day == day %}
+                                {% get_matched_assignment assignments sem slot.slot_number as matched %}
+                                    {% if matched %}
+                                        <td colspan="{{ matched.time_slots|length }}">
+                                            {{ matched.assignment.course.name }} ({{ matched.assignment.teacher.initial }})<br>
+                                            <small>{{ matched.assignment.room.name }}</small>
+                                        </td>
+                                        {% for _ in matched.time_slots|length|add:"-1"|times %}
+                                            <td style="display: none;"></td>
+                                        {% endfor %}
+                                    {% else %}
+                                        <td></td>
+                                    {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endfor %}
+
+</body>
+</html>

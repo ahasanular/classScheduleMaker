@@ -1,0 +1,28 @@
+{
+  "constraints": {
+    "one_teacher_per_course": true,
+
+
+    "max_teacher_gap": 2,
+    "max_semester_gap": 2,
+    "session_distribution_priority": {
+      "Friday": 6,
+      "Saturday": 2,
+      "Thursday": 2
+    },
+    "strict_lab_consecutiveness": true,
+    "respect_preferred_slots": true,
+    "respect_preferred_courses": true,
+    "prioritize_teachers_with_fewer_assignments": true,
+    "course_repeat_same_day": false,
+    "enforce_teacher_max_weekly_load": true,
+    "minimize_time_gaps": true
+  },
+  "weights": {
+    "preferred_time_slot": 10,
+    "preferred_course": 8,
+    "teacher_load_balance": 5,
+    "session_distribution": 6,
+    "time_gap_penalty": -3
+  }
+}

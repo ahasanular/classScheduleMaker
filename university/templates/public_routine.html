@@ -1,0 +1,61 @@
+{% load custom_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Class Routine</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-family: sans-serif;
+            font-size: 14px;
+            margin-bottom: 50px;
+        }
+        th, td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background: #f0f0f0;
+        }
+        .batch-col {
+            background: #eee;
+            font-weight: bold;
+        }
+        h3 {
+            margin-top: 50px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h2 style="text-align:center;">Department of Computer Science & Engineering</h2>
+    <h4 style="text-align:center;">Semester-wise Class Routine</h4>
+    <a target="_blank" href="{% url 'export_routine_pdf'%}" class="btn btn-primary"><button>Export PDF</button></a>
+
+    {% for day in days %}
+        <h3>{{ day }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Semester</th>
+                    {% for slot in slots_by_day|get_item:day %}
+                        <th>{{ slot.start_time }} - {{ slot.end_time }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for sem, day_data in routine_data.items %}
+                    <tr>
+                        <td class="batch-col">{{ sem }}</td>
+                        {% for cell in day_data|get_item:day %}
+                            <td colspan="{{ cell.colspan }}">{{ cell.text|safe }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+</body>
+</html>
