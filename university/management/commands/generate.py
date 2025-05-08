@@ -88,7 +88,7 @@ class Command(BaseCommand):
                 initial=t.initial,
                 department=t.department,
                 max_classes_per_week=t.max_classes_per_week,
-                preferred_courses=[c for c in t.preferred_courses.all()],
+                preferred_courses=[c.id for c in t.preferred_courses.filter(is_active=True)],
                 preferred_time_slots=[ts for ts in t.preferred_time_slots.all()],
                 minimum_classes_per_day=t.minimum_classes_per_day
             ))
@@ -104,8 +104,20 @@ class Command(BaseCommand):
                 credit=c.credit,
                 sessions_per_week=c.sessions_per_week,
                 duration_per_session=c.duration_per_session,
-                preferred_teachers=[t for t in c.preferred_teachers.all()],
-                is_lab=c.is_lab
+                is_lab=c.is_lab,
+                preferred_teachers=[
+                    DTeacher(
+                        id=t.id,
+                        name=t.name,
+                        initial=t.initial,
+                        department=t.department,
+                        max_classes_per_week=t.max_classes_per_week,
+                        preferred_courses=[c.id for c in t.preferred_courses.all()],
+                        preferred_time_slots=[ts for ts in t.preferred_time_slots.all()],
+                        minimum_classes_per_day=t.minimum_classes_per_day
+                    )
+                    for t in c.preferred_teachers.filter(is_active=True)
+                ],
             ) for c in Course.objects.filter(is_active=True).select_related('department').all()
         ]
 

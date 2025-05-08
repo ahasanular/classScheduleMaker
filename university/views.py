@@ -21,7 +21,7 @@ def routine_test_view(request):
         for slot in time_slots:
             a = sem_assignments.filter(time_slot=slot).first()
             if a:
-                row[slot] = f"{a.course.name} ({a.teacher.name})<br><small>{a.room.name}</small>"
+                row[slot] = f"({a.course.code}) {a.course.name} ({a.teacher.name})<br><small>{a.room.name}</small>"
             else:
                 row[slot] = ""
         routine_data[sem] = row
@@ -88,7 +88,7 @@ def public_routine_view(request):
                     for s in a_slot_objs:
                         used_slots.add(s.id)
 
-                    cell_text = f"{matched_assignment.course.name} ({matched_assignment.teacher.name})<br><small>{matched_assignment.room.name}</small>"
+                    cell_text = f"({matched_assignment.course.code}) {matched_assignment.course.name} ({matched_assignment.teacher.name})<br><small>{matched_assignment.room.name}</small>"
                     row.append({'colspan': colspan, 'text': cell_text})
                     i += colspan
                 else:

@@ -88,9 +88,10 @@ class ScheduleGenerator:
 
         preferred = course.preferred_teachers
         ts = [t for t in self.teachers if t.department == course.department]
-
+        random.shuffle(ts)
+        random.shuffle(preferred)
         found_teachers = preferred + [item for item in ts if item not in preferred]
-        random.shuffle(found_teachers)
+
         return found_teachers
 
     def get_available_slots(self, course: Course, teacher: Teacher):

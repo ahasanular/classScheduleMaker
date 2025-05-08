@@ -90,7 +90,7 @@ class ScoreEngine:
             return 0.0
 
     def _score_respect_teacher_preferred_courses(self, assignment: Assignment, current_assignments: List[Assignment]) -> float:
-        return 1.0 if assignment.course in assignment.teacher.preferred_courses else 0.0
+        return 1.0 if assignment.course.id in assignment.teacher.preferred_courses else 0.0
 
     def _score_prioritize_teachers_with_fewer_assignments(self, assignment: Assignment, current_assignments: List[Assignment]) -> float:
         teacher = assignment.teacher
