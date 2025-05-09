@@ -1,62 +1,93 @@
-{% load custom_filters %}
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Class Routine</title>
-    <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            font-family: sans-serif;
-            font-size: 14px;
-            margin-bottom: 50px;
-        }
-        th, td {
-            border: 1px solid #333;
-            padding: 8px;
-            text-align: center;
-        }
-        th {
-            background: #f0f0f0;
-        }
-        .batch-col {
-            background: #eee;
-            font-weight: bold;
-        }
-        h3 {
-            margin-top: 50px;
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-    <h2 style="text-align:center;">Department of Computer Science & Engineering</h2>
-    <h4 style="text-align:center;">Semester-wise Class Routine</h4>
-    <a href="{% url 'generate_routine_view'%}" class="btn btn-primary"><button>Generate New</button></a>
-    <a target="_blank" href="{% url 'export_routine_pdf'%}" class="btn btn-primary"><button>Export PDF</button></a>
+{% extends "base.html" %}
 
-    {% for day in days %}
-        <h3>{{ day }}</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Semester</th>
-                    {% for slot in slots_by_day|get_item:day %}
-                        <th>{{ slot.start_time }} - {{ slot.end_time }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for sem, day_data in routine_data.items %}
-                    <tr>
-                        <td class="batch-col">{{ sem }}</td>
-                        {% for cell in day_data|get_item:day %}
-                            <td colspan="{{ cell.colspan }}">{{ cell.text|safe }}</td>
-                        {% endfor %}
-                    </tr>
-                {% endfor %}
-            </tbody>
+{% load custom_filters %}
+
+{% block body %}
+    <div class="text-center mb-6">
+    <h2 class="text-2xl font-bold">Department of Computer Science & Engineering</h2>
+    <h4 class="text-lg text-gray-600">Semester-wise Class Routine</h4>
+  </div>
+
+  <!-- Buttons -->
+  <div class="flex justify-center flex-wrap gap-4 mb-8">
+      <a href="{% url 'generate_routine_view' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow">
+        Generate New
+      </a>
+      <a href="{% url 'export_routine_pdf' %}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded shadow">
+        Export PDF
+      </a>
+
+      {% if unassigned %}
+        <button onclick="document.getElementById('unassignedModal').classList.remove('hidden')" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded shadow">
+          Unassigned Courses
+        </button>
+      {% else %}
+        <button disabled class="bg-gray-300 text-gray-500 font-semibold py-2 px-4 rounded shadow cursor-not-allowed opacity-50">
+          Unassigned Courses
+        </button>
+      {% endif %}
+    </div>
+
+
+  {% for day in days %}
+    <h3 class="text-xl font-semibold text-center my-8">{{ day }}</h3>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-center border border-gray-300 shadow-sm">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="border border-gray-300 px-4 py-2">Semester</th>
+            {% for slot in slots_by_day|get_item:day %}
+              <th class="border border-gray-300 px-4 py-2">{{ slot.start_time }} - {{ slot.end_time }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for sem, day_data in routine_data.items %}
+            <tr>
+              <td class="bg-gray-100 font-semibold border border-gray-300 px-4 py-2">{{ sem }}</td>
+              {% for cell in day_data|get_item:day %}
+                <td colspan="{{ cell.colspan }}" class="border border-gray-300 px-4 py-2">{{ cell.text|safe }}</td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endfor %}
+
+  <!-- Modal -->
+  <div id="unassignedModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold">Unassigned Courses</h3>
+        <button onclick="document.getElementById('unassignedModal').classList.add('hidden')" class="text-gray-500 hover:text-black">&times;</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm border border-gray-300">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="border px-4 py-2">Course Code</th>
+              <th class="border px-4 py-2">Name</th>
+              <th class="border px-4 py-2">Sessions Needed/Week</th>
+              <th class="border px-4 py-2">Assigned/Week</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for course in unassigned.values %}
+              <tr>
+                <td class="border px-4 py-2">{{ course.code }}</td>
+                <td class="border px-4 py-2">{{ course.name }}</td>
+                <td class="border px-4 py-2">{{ course.session_needed_per_week }}</td>
+                <td class="border px-4 py-2">{{ course.assigned_per_week }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="4" class="text-center border px-4 py-2 text-gray-500">No unassigned courses found.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
         </table>
-    {% endfor %}
-</body>
-</html>
+      </div>
+    </div>
+  </div>
+{% endblock %}

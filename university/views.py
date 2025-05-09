@@ -4,7 +4,8 @@ from django.http import Http404
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.http import HttpResponse
-from university.models import Assignment, TimeSlot, Teacher
+from django.db.models import Count
+from university.models import Assignment, TimeSlot, Teacher, Course
 
 
 def routine_test_view(request):
@@ -26,10 +27,32 @@ def routine_test_view(request):
                 row[slot] = ""
         routine_data[sem] = row
 
+    # Unassigned courses logic
+    all_courses = Course.objects.filter(is_active=True)
+
+    assigned_counts_qs = (
+        Assignment.objects.values('course')
+        .annotate(count=Count('id'))
+    )
+
+    assigned_counts = {entry['course']: entry['count'] for entry in assigned_counts_qs}
+
+    unassigned = {}
+    for course in all_courses:
+        assigned = assigned_counts.get(course.id, 0)
+        if assigned < course.sessions_per_week:
+            unassigned[course.id] = {
+                'code': course.code,
+                'name': course.name,
+                'session_needed_per_week': course.sessions_per_week,
+                'assigned_per_week': assigned,
+            }
+
     context = {
         'routine_data': routine_data,
         'time_slots': time_slots,
         'days': days,
+        'unassigned': unassigned,
     }
     return render(request, 'routine.html', context)
 
@@ -97,10 +120,32 @@ def public_routine_view(request):
 
             routine_data[sem][day] = row
 
+    # Unassigned courses logic
+    all_courses = Course.objects.filter(is_active=True)
+
+    assigned_counts_qs = (
+        Assignment.objects.values('course')
+        .annotate(count=Count('id'))
+    )
+
+    assigned_counts = {entry['course']: entry['count'] for entry in assigned_counts_qs}
+
+    unassigned = {}
+    for course in all_courses:
+        assigned = assigned_counts.get(course.id, 0)
+        if assigned < course.sessions_per_week:
+            unassigned[course.id] = {
+                'code': course.code,
+                'name': course.name,
+                'session_needed_per_week': course.sessions_per_week,
+                'assigned_per_week': assigned,
+            }
+
     context = {
         'routine_data': routine_data,
         'slots_by_day': slots_by_day,
         'days': days,
+        'unassigned': unassigned,
     }
     return render(request, 'public_routine.html', context)
 
