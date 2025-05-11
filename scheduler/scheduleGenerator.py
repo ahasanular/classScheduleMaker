@@ -7,13 +7,16 @@ import random
 
 
 class ScheduleGenerator:
-    def __init__(self, config, courses, teachers, rooms, time_slots):
+    def __init__(self, config, courses, teachers, rooms, time_slots, sections):
         self.config = config
         self.time_slots = time_slots
         self.teachers = teachers
         self.rooms = rooms
+        self.sections = sections
+
         random.shuffle(courses)
         courses.sort(key=self.get_course_priority, reverse=True)
+
         self.courses = courses
 
         self.tracker = Tracker()
@@ -23,7 +26,8 @@ class ScheduleGenerator:
 
         self.assignments : List[Assignment] = []
 
-    def get_day_slots(self, time_slots: List[TimeSlot]):
+    @staticmethod
+    def get_day_slots(time_slots: List[TimeSlot]):
         all_slots_by_day = defaultdict(list)
         for slot in time_slots:
             all_slots_by_day[slot.day].append(slot)
@@ -45,8 +49,6 @@ class ScheduleGenerator:
     def generate(self):
         unassigned_courses = []
         for idx, course in enumerate(self.courses):
-            if idx == 8:
-                pass
             if not self.try_assign_course(course):
                 unassigned_courses.append(course)
         return self.assignments, unassigned_courses
@@ -60,8 +62,6 @@ class ScheduleGenerator:
                 slot_groups = self.get_available_slots(course, teacher)
 
                 for slot_group in slot_groups:
-                    if isinstance(slot_group[0], list):
-                        pass
                     rooms = self.get_available_rooms(course, slot_group, teacher)
 
                     for room in rooms:

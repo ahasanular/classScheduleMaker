@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.db.models import Count
-from .models import Teacher, Course, Room, TimeSlot, Assignment, Department, Constrain, ConstrainType
+from .models import Teacher, Course, Room, TimeSlot, Assignment, Department, Constrain, ConstrainType, Shift, Section
 
 
 @admin.register(Department)
@@ -34,6 +34,7 @@ class CourseAdmin(admin.ModelAdmin):
     )
     list_filter = ('semester', 'is_lab', 'credit', 'is_assigned', 'department', 'is_active')
     search_fields = ('name', 'id', 'code')
+    filter_horizontal = ('shifts',)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -65,7 +66,8 @@ class RoomAdmin(admin.ModelAdmin):
 
 @admin.register(TimeSlot)
 class TimeSlotAdmin(admin.ModelAdmin):
-    list_display = ('day', 'slot_number', 'is_active', 'get_total_assignment')
+    list_display = ('day', 'slot_number', 'is_active', 'shift', 'get_total_assignment')
+    list_filter = ('day', 'shift', 'is_active')
     ordering = ('day', 'slot_number', 'is_active')
 
     def get_queryset(self, request):
@@ -93,3 +95,12 @@ class ConstrainTypeAdmin(admin.ModelAdmin):
 class ConstrainAdmin(admin.ModelAdmin):
     list_display = ['type', 'condition', 'severity', 'is_active']
     list_filter = ('type', 'severity')
+
+@admin.register(Shift)
+class ShiftAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+
+@admin.register(Section)
+class SectionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'semester', 'shift', 'department', 'is_active')
+    list_filter = ('semester', 'shift', 'department', 'is_active')

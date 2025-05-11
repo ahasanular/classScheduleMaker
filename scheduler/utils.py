@@ -104,6 +104,63 @@ class ScoreEngine:
             return 1.0
         return 1.0 - min(len(self.tracker.used_slots_by_room[room.id]) / len(self.time_slots), 1.0)
 
+    def _score_day_balancing_slots_allocation(self, assignment: Assignment, current_assignments: List[Assignment]) -> float:
+        slot_count_by_day = defaultdict(int)
+        total_available = 0
+        for slot in self.time_slots:
+            if slot.id not in self.tracker.slot_used_by_semester[assignment.course.semester]:
+                slot_count_by_day[slot.day] += 1
+                total_available += 1
+
+        dept_id = assignment.course.department.id
+        semester = assignment.course.semester
+
+        # Count actual slots per day
+        day_count = Counter()
+        for a in current_assignments:
+            if a.course.department.id == dept_id and a.course.semester == semester:
+                for ts in a.slot_group:
+                    day_count[ts.day] += 1
+        # Add new assignment
+        for ts in assignment.slot_group:
+            day_count[ts.day] += 1
+
+        # Calculate ideal ratio
+        ideal = {day: slot_count_by_day[day] / total_available for day in slot_count_by_day}
+        total_assigned = sum(day_count.values())
+        if total_assigned == 0:
+            return 1.0
+        actual = {day: day_count[day] / total_assigned for day in slot_count_by_day}
+
+        # Score similarity using squared error
+        error = sum((actual.get(day, 0.0) - ideal[day]) ** 2 for day in ideal)
+        return 1.0 - min(error * 2, 1.0)  # Normalize into [0, 1] range
+
+    def _score_prioritize_early_slots(self, assignment: Assignment, current_assignments: List[Assignment]) -> float:
+        day_slots_dict = defaultdict(list)
+        for slot in self.time_slots:
+            day_slots_dict[slot.day].append(slot.slot_number)
+
+        # Optional: convert defaultdict to regular dict
+        for day, slots in day_slots_dict.items():
+            slots.sort(key=lambda slot: slot)
+
+        score = 0
+        for slot in assignment.slot_group:
+            day = slot.day
+            number = slot.slot_number
+            if day in day_slots_dict and number in day_slots_dict[day]:
+                idx = day_slots_dict[day].index(number)
+                score += max(0, 1.0 - 0.1 * idx)
+        return score
+
+        avg_slot_number = np.mean([ts.slot_number for ts in assignment.slot_group])
+        max_slot_number = max(ts.slot_number for ts in assignment.slot_group)
+        if max_slot_number == 0:
+            return 0.0
+        # Early slots get lower score (better), late slots higher score (worse)
+        return avg_slot_number / max_slot_number
+
     def _score_minimize_teacher_slot_gap(self, assignment: Assignment, current_assignments: List[Assignment]) -> float:
         teacher_id = assignment.teacher.id
         slots = [ts.slot_number for a in current_assignments if a.teacher.id == teacher_id for ts in a.slot_group]
@@ -190,32 +247,6 @@ class ScoreEngine:
         # Score similarity using squared error
         error = sum((actual.get(day, 0.0) - ideal[day]) ** 2 for day in ideal)
         return 1.0 - min(error * 2, 1.0)  # Normalize into [0, 1] range
-
-
-    def _score_prioritize_early_slots(self, assignment: Assignment, current_assignments: List[Assignment]) -> float:
-        day_slots_dict = defaultdict(list)
-        for slot in self.time_slots:
-            day_slots_dict[slot.day].append(slot.slot_number)
-
-        # Optional: convert defaultdict to regular dict
-        for day, slots in day_slots_dict.items():
-            slots.sort(key=lambda slot: slot)
-
-        score = 0
-        for slot in assignment.slot_group:
-            day = slot.day
-            number = slot.slot_number
-            if day in day_slots_dict and number in day_slots_dict[day]:
-                idx = day_slots_dict[day].index(number)
-                score += max(0, 1.0 - 0.1 * idx)
-        return score
-
-        avg_slot_number = np.mean([ts.slot_number for ts in assignment.slot_group])
-        max_slot_number = max(ts.slot_number for ts in assignment.slot_group)
-        if max_slot_number == 0:
-            return 0.0
-        # Early slots get lower score (better), late slots higher score (worse)
-        return avg_slot_number / max_slot_number
 
 
 class Tracker:

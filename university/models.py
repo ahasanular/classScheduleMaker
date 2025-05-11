@@ -15,6 +15,26 @@ class Department(ModelMixin):
         return self.name
 
 
+class Shift(ModelMixin):
+    name = models.CharField(max_length=50, unique=True)  # Morning, Evening, etc.
+
+    def __str__(self):
+        return self.name
+
+
+class Section(ModelMixin):
+    name = models.CharField(max_length=10)  # e.g., A, B
+    semester = models.PositiveIntegerField()
+    shift = models.ForeignKey(Shift, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('name', 'semester', 'shift', 'department')
+
+    def __str__(self):
+        return f"{self.name} (Sem {self.semester} - {self.shift.name})"
+
+
 class Room(ModelMixin):
     name = models.CharField(max_length=50)
     capacity = models.PositiveIntegerField(default=40)  # optional
@@ -30,6 +50,8 @@ class TimeSlot(ModelMixin):
     slot_number = models.PositiveIntegerField()  # like 1 to N
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
+
+    shift = models.ForeignKey(Shift, on_delete=models.CASCADE, null=True)
 
     class Meta:
         unique_together = ('day', 'slot_number')
@@ -64,6 +86,8 @@ class Course(ModelMixin):
     is_lab = models.BooleanField(default=False)
     is_assigned = models.BooleanField(default=False)
 
+    shifts = models.ManyToManyField(Shift, related_name='courses')
+
     def __str__(self):
         return f"{self.name} (Sem {self.semester})"
 
@@ -77,6 +101,9 @@ class Assignment(ModelMixin):
     time_slot = models.ManyToManyField(TimeSlot, related_name='assignments')
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     score = models.FloatField(default=0)
+
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, null=True, blank=True)
+    shift = models.ForeignKey(Shift, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f"{self.course.name} at {[slot for slot in self.time_slot.all()]} by {self.teacher.name}"
