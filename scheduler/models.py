@@ -10,6 +10,9 @@ class OrmBaseModel(BaseModel):
     # }
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
+    def __hash__(self) -> int:
+        return self.id.__hash__()
+
 
 class Department(OrmBaseModel):
     id: int
@@ -57,7 +60,7 @@ class Course(OrmBaseModel):
     credit: float
     sessions_per_week: int
     duration_per_session: int
-    preferred_teachers: List["Teacher"]
+    preferred_teachers: List[int]
     is_lab: bool
 
     shifts: List[Shift]
@@ -100,5 +103,6 @@ class Constrains(OrmBaseModel):
     condition: str
     severity: str
     score_weight: float
+    key: str
 
 
