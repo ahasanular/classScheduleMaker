@@ -1,6 +1,5 @@
-import time
 from django.core.management.base import BaseCommand
-from university.models import Course, Teacher, Room, TimeSlot, Constrain, Section  # Django models
+from university.models import Course, Teacher, Room, TimeSlot, Constrain, Shift, Section  # Django models
 from university.models import Assignment as DjangoAssignment
 from scheduler.scheduleGenerator import ScheduleGenerator
 from scheduler.models import (
@@ -10,26 +9,29 @@ from scheduler.models import (
 )
 
 from typing import List, Dict
-from django.forms.models import model_to_dict
 
 
 class Command(BaseCommand):
     help = 'Generates the optimal class schedule and stores it in the database'
 
     @staticmethod
-    def clear_previous_assignments():
+    def clear_previous_assignments(shift):
         """Reset assignment and assignment-related flags in all relevant models."""
-        DjangoAssignment.objects.all().delete()
+        DjangoAssignment.objects.filter(shift=shift).delete()
         Course.objects.all().update(is_assigned=False)
         Teacher.objects.all().update(is_assigned=False)
 
+    def add_arguments(self, parser):
+        parser.add_argument('--shift', type=str, required=True, help='A valid shift name required!')
+
     def handle(self, *args, **options):
-        self.clear_previous_assignments()
+        shift = Shift.objects.get(name=options['shift'])
+        self.clear_previous_assignments(shift)
 
-        config, courses, teachers, rooms, time_slots, sections = self.initialize_data()
+        constrains, courses, teachers, rooms, time_slots, shift, sections = self.initialize_data(shift=options['shift'])
 
-        scheduler = ScheduleGenerator(config, courses, teachers, rooms, time_slots, sections)
-        assignments, unassigned = scheduler.generate()
+        scheduler = ScheduleGenerator(constrains, courses, teachers, rooms, time_slots, shift, sections)
+        assignments, unassigned_courses_section = scheduler.generate()
 
         self.save_routine(assignments)
 
@@ -38,11 +40,15 @@ class Command(BaseCommand):
             course = Course.objects.get(id=assignment.course.id)
             teacher = Teacher.objects.get(id=assignment.teacher.id)
             room = Room.objects.get(id=assignment.room.id)
+            shift = Shift.objects.get(id=assignment.shift.id)
+            section = Section.objects.get(id=assignment.section.id)
             ass = DjangoAssignment.objects.create(
                 course=course,
                 teacher=teacher,
                 room=room,
                 score=assignment.score,
+                shift=shift,
+                section=section,
             )
             ass.time_slot.set([s.id for s in assignment.slot_group])
 
@@ -55,18 +61,22 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Schedule generated and saved successfully.'))
 
     @staticmethod
-    def initialize_data(*args, **kwargs):
-        # convert config models to constrains
-        config: Dict[str, DConstrains] = {
-            cs.key: DConstrains(
+    def initialize_data(shift, *args, **kwargs):
+        # convert constrain models to constrains
+        constrains: List[DConstrains] = [
+            DConstrains(
                 id=cs.id,
                 type=cs.type.name,
                 condition=cs.condition,
                 severity=cs.severity,
                 score_weight=cs.score_weight,
+                key=cs.key
             )
             for cs in Constrain.objects.filter(is_active=True)
-        }
+        ]
+
+        shift = Shift.objects.get(name=shift)
+        Dshift: DShift = DShift.model_validate(shift)
 
         # Convert Django TimeSlot to dataclass
         time_slots: List[DTimeSlot] = [
@@ -78,7 +88,7 @@ class Command(BaseCommand):
                 end_time=ts.end_time,
                 shift=DShift(id=ts.shift.id, name=ts.shift.name),
             )
-            for ts in TimeSlot.objects.filter(is_active=True).order_by('id')
+            for ts in TimeSlot.objects.filter(is_active=True, shift=shift).order_by('id')
         ]
 
         # Convert Django Room to dataclass
@@ -125,24 +135,24 @@ class Command(BaseCommand):
                 sessions_per_week=c.sessions_per_week,
                 duration_per_session=c.duration_per_session,
                 preferred_teachers=[
-                    DTeacher(
-                        id=t.id,
-                        name=t.name,
-                        initial=t.initial,
-                        department=DDepartment(id=t.id, name=t.department.name),
-                        max_classes_per_week=t.max_classes_per_week,
-                        preferred_time_slots=[
-                            DTimeSlot.model_validate(ts) for ts in t.preferred_time_slots.all()
-                        ],
-                        preferred_courses=[cs.id for cs in t.preferred_courses.filter(is_active=True)],
-                        minimum_classes_per_day=t.minimum_classes_per_day
-                    )
-                    for t in c.preferred_teachers.all()
+                    # DTeacher(
+                    #     id=t.id,
+                    #     name=t.name,
+                    #     initial=t.initial,
+                    #     department=DDepartment(id=t.id, name=t.department.name),
+                    #     max_classes_per_week=t.max_classes_per_week,
+                    #     preferred_time_slots=[
+                    #         DTimeSlot.model_validate(ts) for ts in t.preferred_time_slots.all()
+                    #     ],
+                    #     preferred_courses=[cs.id for cs in t.preferred_courses.filter(is_active=True)],
+                    #     minimum_classes_per_day=t.minimum_classes_per_day
+                    # )
+                    t.id for t in c.preferred_teachers.all()
                 ],
                 is_lab=c.is_lab,
                 shifts=[DShift.model_validate(s) for s in c.shifts.all()]
             )
-            for c in Course.objects.filter(is_active=True)
+            for c in Course.objects.filter(is_active=True, shifts=shift)
         ]
 
-        return config, courses, teachers, rooms, time_slots, sections
+        return constrains, courses, teachers, rooms, time_slots, Dshift, sections

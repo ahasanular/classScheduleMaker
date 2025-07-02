@@ -5,6 +5,9 @@ DAYS = [
     ('Thursday', 'Thursday'),
     ('Friday', 'Friday'),
     ('Saturday', 'Saturday'),
+    ('Sunday', 'Sunday'),
+    ('Tuesday', 'Tuesday'),
+    ('Wednesday', 'Wednesday')
 ]
 
 
