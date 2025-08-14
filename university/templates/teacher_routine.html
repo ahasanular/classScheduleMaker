@@ -1,63 +1,41 @@
+{% extends "base.html" %}
 {% load custom_filters %}
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Class Routine</title>
-    <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            font-family: sans-serif;
-            font-size: 14px;
-            margin-bottom: 50px;
-        }
-        th, td {
-            border: 1px solid #333;
-            padding: 8px;
-            text-align: center;
-        }
-        th {
-            background: #f0f0f0;
-        }
-        .batch-col {
-            background: #eee;
-        }
-        h3 {
-            margin-top: 50px;
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-    <h2 style="text-align:center;">Department of Computer Science & Engineering</h2>
-    <h4 style="text-align:center;">Teacher-wise Class Routine</h4>
 
-    {% for day in days %}
-        <h3>{{ day }}</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Semester</th>
-                    {% for slot in time_slots %}
-                        {% if slot.day == day %}
-                            <th>{{ slot.start_time }} - {{ slot.end_time }}</th>
-                        {% endif %}
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for sem, row in routine_data.items %}
-                    <tr>
-                        <td class="batch-col">{{ sem }}</td>
-                        {% for slot in time_slots %}
-                            {% if slot.day == day %}
-                                <td>{{ row|get_item:slot|safe }}</td>
-                            {% endif %}
-                        {% endfor %}
-                    </tr>
+{% block body %}
+  <div class="text-center mb-6">
+    <h2 class="text-2xl font-bold">Routine for {{ teacher.name }}</h2>
+    <h4 class="text-lg text-gray-600">Across All Shifts</h4>
+  </div>
+
+  {% for shift_name, data in all_routines.items %}
+    <h3 class="text-xl font-semibold my-6 text-center">Shift: {{ shift_name }}</h3>
+
+    {% for day in data.days %}
+      <h4 class="text-lg font-semibold text-center my-4">{{ day }}</h4>
+      <div class="overflow-x-auto mb-10">
+        <table class="w-full text-sm text-center border border-gray-300 shadow-sm">
+          <thead>
+            <tr class="bg-gray-200">
+              <th class="border border-gray-300 px-4 py-2">Semester</th>
+              {% for slot in data.slots_by_day|get_item:day %}
+                <th class="border border-gray-300 px-4 py-2">{{ slot.start_time }} - {{ slot.end_time }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for sem, day_data in data.routine_data.items %}
+              <tr>
+                <td class="bg-gray-100 font-semibold border border-gray-300 px-4 py-2">{{ sem }}</td>
+                {% for cell in day_data|get_item:day %}
+                  <td colspan="{{ cell.colspan }}" class="border border-gray-300 px-4 py-2">
+                    {{ cell.text|safe }}
+                  </td>
                 {% endfor %}
-            </tbody>
+              </tr>
+            {% endfor %}
+          </tbody>
         </table>
+      </div>
     {% endfor %}
-</body>
-</html>
+  {% endfor %}
+{% endblock %}

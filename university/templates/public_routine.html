@@ -5,15 +5,16 @@
 {% block body %}
     <div class="text-center mb-6">
     <h2 class="text-2xl font-bold">Department of Computer Science & Engineering</h2>
-    <h4 class="text-lg text-gray-600">Semester-wise Class Routine</h4>
+    <h3 class="text-2xl font-bold">Shift : {{ shift.name }}</h3>
+    <h4 class="text-lg text-gray-600">shift-wise Class Routine</h4>
   </div>
 
   <!-- Buttons -->
   <div class="flex justify-center flex-wrap gap-4 mb-8">
-      <a href="{% url 'generate_routine_view' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow">
+      <a href="{% url 'generate_routine_view' shift.id %}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow">
         Generate New
       </a>
-      <a href="{% url 'export_routine_pdf' %}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded shadow">
+      <a href="{% url 'export_routine_pdf' shift.id %}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded shadow">
         Export PDF
       </a>
 
@@ -55,39 +56,55 @@
     </div>
   {% endfor %}
 
-  <!-- Modal -->
-  <div id="unassignedModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
-    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xl font-semibold">Unassigned Courses</h3>
-        <button onclick="document.getElementById('unassignedModal').classList.add('hidden')" class="text-gray-500 hover:text-black">&times;</button>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm border border-gray-300">
-          <thead class="bg-gray-100">
-            <tr>
-              <th class="border px-4 py-2">Course Code</th>
-              <th class="border px-4 py-2">Name</th>
-              <th class="border px-4 py-2">Sessions Needed/Week</th>
-              <th class="border px-4 py-2">Assigned/Week</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for course in unassigned.values %}
-              <tr>
-                <td class="border px-4 py-2">{{ course.code }}</td>
-                <td class="border px-4 py-2">{{ course.name }}</td>
-                <td class="border px-4 py-2">{{ course.session_needed_per_week }}</td>
-                <td class="border px-4 py-2">{{ course.assigned_per_week }}</td>
-              </tr>
-            {% empty %}
-              <tr>
-                <td colspan="4" class="text-center border px-4 py-2 text-gray-500">No unassigned courses found.</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+ <!-- Modal Overlay -->
+    <div id="unassignedModal" onclick="closeModal(event)" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+      <!-- Modal Content -->
+      <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-semibold">Unassigned Courses {{ unassigned_count }}</h3>
+          <button onclick="document.getElementById('unassignedModal').classList.add('hidden')" class="text-gray-500 hover:text-black text-2xl">&times;</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm border border-gray-300">
+              <thead class="bg-gray-100 sticky top-0">
+                <tr>
+                  <th class="border px-4 py-2">Section</th>
+                  <th class="border px-4 py-2">Course Code</th>
+                  <th class="border px-4 py-2">Name</th>
+                  <th class="border px-4 py-2">Sessions Needed/Week</th>
+                  <th class="border px-4 py-2">Assigned/Week</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for section, courses in unassigned.items %}
+                  {% for course in courses %}
+                    <tr>
+                      {% if forloop.first %}
+                        <td class="border px-4 py-2" rowspan="{{ courses|length }}">{{ section }}</td>
+                      {% endif %}
+                      <td class="border px-4 py-2">{{ course.code }}</td>
+                      <td class="border px-4 py-2">{{ course.name }}</td>
+                      <td class="border px-4 py-2">{{ course.session_needed_per_week }}</td>
+                      <td class="border px-4 py-2">{{ course.assigned_per_week }}</td>
+                    </tr>
+                  {% endfor %}
+                {% empty %}
+                  <tr>
+                    <td colspan="5" class="text-center border px-4 py-2 text-gray-500">No unassigned courses found.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+        </div>
       </div>
     </div>
-  </div>
+
+    <script>
+      function closeModal(event) {
+        // Close only if the user clicked on the overlay, not the modal content
+        if (event.target.id === 'unassignedModal') {
+          event.target.classList.add('hidden');
+        }
+      }
+    </script>
 {% endblock %}
