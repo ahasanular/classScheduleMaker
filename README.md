@@ -52,5 +52,5 @@ No part of this material may be reproduced, distributed, or transmitted in any f
 
 ## 📬 Contact
 If you are a recruiter or institution interested in a **full demonstration** or **custom deployment**, feel free to reach out:  
-📧 **[your.email@example.com]**  
-🔗 **[LinkedIn Profile]**  
+📧 **ahasanular@gmail.com**  
+🔗 **[[LinkedIn Profile]](https://www.linkedin.com/in/md-ahasanul-arafath/)**  
